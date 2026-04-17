@@ -10,6 +10,14 @@ export type DietaryRequirement =
 
 export type AllergySeverity = 'Mild' | 'Severe' | 'Anaphylactic';
 
+export interface Event {
+  id: string;
+  created_at: string;
+  slug: string;
+  school_name: string;
+  event_date: string | null;
+}
+
 export interface Attendee {
   id: string;
   created_at: string;

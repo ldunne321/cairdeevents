@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
+import { formatSlug } from '@/lib/utils';
 
 const DIETARY_OPTIONS = [
   'None',
@@ -72,6 +73,20 @@ export async function POST(request: NextRequest) {
 
   // --- Persist ---
   const supabase = getSupabaseClient();
+
+  // Ensure the event exists. Uses INSERT … ON CONFLICT DO NOTHING so concurrent
+  // submissions don't race. Non-fatal: a failure here must not block the attendee insert.
+  // Note: if the events table was created with event_date NOT NULL, alter the column
+  // to be nullable (ALTER TABLE events ALTER COLUMN event_date DROP NOT NULL) so this works.
+  const { error: eventErr } = await supabase
+    .from('events')
+    .upsert(
+      { slug: event_slug, school_name: formatSlug(event_slug), event_date: null },
+      { onConflict: 'slug', ignoreDuplicates: true }
+    );
+  if (eventErr) {
+    console.warn('[events] auto-create failed (check event_date nullability):', eventErr.message);
+  }
 
   const { error } = await supabase.from('attendees').insert({
     event_slug,
