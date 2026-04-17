@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '@/lib/supabase';
 import { formatSlug } from '@/lib/utils';
 import type { Attendee, AllergySeverity } from '@/types';
+import ExportButton from './ExportButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,10 +67,13 @@ export default async function AdminPage({ params }: Props) {
 
         {/* ── Section 1: Full attendance list ── */}
         <section>
-          <h2 className="text-base font-semibold text-gray-900 uppercase tracking-wide mb-4">
-            Attendance{' '}
-            <span className="font-normal text-gray-500 normal-case">({attendees.length})</span>
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-900 uppercase tracking-wide">
+              Attendance{' '}
+              <span className="font-normal text-gray-500 normal-case">({attendees.length})</span>
+            </h2>
+            <ExportButton attendees={attendees} eventSlug={eventSlug} />
+          </div>
 
           {attendees.length === 0 ? (
             <p className="text-sm text-gray-500">No attendees registered yet.</p>
