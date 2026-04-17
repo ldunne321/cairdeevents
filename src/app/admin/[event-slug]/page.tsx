@@ -1,17 +1,11 @@
 import { getSupabaseClient } from '@/lib/supabase';
+import { formatSlug } from '@/lib/utils';
 import type { Attendee, AllergySeverity } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { 'event-slug': string };
-}
-
-function formatSlug(slug: string): string {
-  return slug
-    .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
 }
 
 function severityBadge(severity: AllergySeverity | null) {
@@ -60,15 +54,15 @@ export default async function AdminPage({ params }: Props) {
   const epilepsyList = attendees.filter((a) => a.has_epilepsy);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <header className="border-b border-gray-100 px-4 py-4">
         <h1 className="text-xl font-semibold text-gray-900 text-center tracking-tight">
-          Cairde — Admin
+          Debs Guru — Admin
         </h1>
         <p className="text-center text-sm text-gray-500 mt-0.5">{formatSlug(eventSlug)}</p>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-10 space-y-14">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-10 space-y-14">
 
         {/* ── Section 1: Full attendance list ── */}
         <section>
@@ -167,6 +161,9 @@ export default async function AdminPage({ params }: Props) {
         </section>
 
       </main>
+      <footer className="py-6 text-center">
+        <p className="text-xs text-gray-400">Powered by Cairde Events</p>
+      </footer>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatSlug } from '@/lib/utils';
 
 const DIETARY_OPTIONS = [
   'None',
@@ -142,11 +143,16 @@ export default function AttendeeForm({ eventSlug }: { eventSlug: string }) {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">You&apos;re registered</h2>
-          <p className="text-gray-500 text-sm">Thank you for completing the form.</p>
+      <div className="min-h-screen bg-white flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center max-w-sm">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">You&apos;re registered</h2>
+            <p className="text-gray-500 text-sm">Thank you for completing the form.</p>
+          </div>
         </div>
+        <footer className="py-6 text-center">
+          <p className="text-xs text-gray-400">Powered by Cairde Events</p>
+        </footer>
       </div>
     );
   }
@@ -157,12 +163,13 @@ export default function AttendeeForm({ eventSlug }: { eventSlug: string }) {
     }`;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <header className="border-b border-gray-100 px-4 py-4">
-        <h1 className="text-xl font-semibold text-gray-900 text-center tracking-tight">Cairde</h1>
+        <h1 className="text-xl font-semibold text-gray-900 text-center tracking-tight">Debs Guru</h1>
+        <p className="text-center text-sm text-gray-500 mt-0.5">{formatSlug(eventSlug)}</p>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-8">
+      <main className="flex-1 max-w-lg mx-auto w-full px-4 py-8">
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
 
           {/* 1. Full name */}
@@ -326,6 +333,9 @@ export default function AttendeeForm({ eventSlug }: { eventSlug: string }) {
           </button>
         </form>
       </main>
+      <footer className="py-6 text-center">
+        <p className="text-xs text-gray-400">Powered by Cairde Events</p>
+      </footer>
     </div>
   );
 }
