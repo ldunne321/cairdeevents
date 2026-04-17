@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { formatSlug } from '@/lib/utils';
+import BulkUploadSection from './BulkUploadSection';
 
 const DIETARY_OPTIONS = [
   'None',
@@ -61,10 +62,18 @@ function YesNo({ value, onChange }: { value: boolean; onChange: (v: boolean) => 
   const inactive = 'bg-white text-gray-600 border-gray-300';
   return (
     <div className="flex gap-2 mt-1">
-      <button type="button" onClick={() => onChange(true)} className={`${base} ${value ? active : inactive}`}>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className={`${base} ${value ? active : inactive}`}
+      >
         Yes
       </button>
-      <button type="button" onClick={() => onChange(false)} className={`${base} ${!value ? active : inactive}`}>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className={`${base} ${!value ? active : inactive}`}
+      >
         No
       </button>
     </div>
@@ -77,11 +86,18 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export default function AttendeeForm({ eventSlug }: { eventSlug: string }) {
+  const [phase, setPhase] = useState<'form' | 'confirm' | 'done'>('form');
   const [form, setForm] = useState<FormState>(initial);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  function resetForm() {
+    setForm(initial);
+    setErrors({});
+    setServerError(null);
+    setPhase('form');
+  }
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -133,28 +149,14 @@ export default function AttendeeForm({ eventSlug }: { eventSlug: string }) {
         throw new Error(data.error ?? 'Something went wrong. Please try again.');
       }
 
-      setSubmitted(true);
+      setPhase('confirm');
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setServerError(
+        err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+      );
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <div className="flex-1 flex items-center justify-center px-4">
-          <div className="text-center max-w-sm">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">You&apos;re registered</h2>
-            <p className="text-gray-500 text-sm">Thank you for completing the form.</p>
-          </div>
-        </div>
-        <footer className="py-6 text-center">
-          <p className="text-xs text-gray-400">Powered by Cairde Events</p>
-        </footer>
-      </div>
-    );
   }
 
   const inputClass = (error?: string) =>
@@ -165,174 +167,270 @@ export default function AttendeeForm({ eventSlug }: { eventSlug: string }) {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <header className="border-b border-gray-100 px-4 py-4">
-        <h1 className="text-xl font-semibold text-gray-900 text-center tracking-tight">Debs Guru</h1>
+        <h1 className="text-xl font-semibold text-gray-900 text-center tracking-tight">
+          Debs Guru
+        </h1>
         <p className="text-center text-sm text-gray-500 mt-0.5">{formatSlug(eventSlug)}</p>
       </header>
 
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 py-8">
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
-
-          {/* 1. Full name */}
-          <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-gray-900 mb-1">
-              Full name <span className="text-red-600" aria-hidden="true">*</span>
-            </label>
-            <input
-              id="full_name"
-              type="text"
-              autoComplete="name"
-              value={form.full_name}
-              onChange={(e) => set('full_name', e.target.value)}
-              className={inputClass(errors.full_name)}
-            />
-            <FieldError message={errors.full_name} />
-          </div>
-
-          {/* 2. Is +1? */}
-          <div>
-            <span className="block text-sm font-medium text-gray-900">Is this person a +1?</span>
-            <YesNo value={form.is_plus_one} onChange={(v) => set('is_plus_one', v)} />
-          </div>
-
-          {/* 3. Whose +1 (conditional) */}
-          {form.is_plus_one && (
-            <div>
-              <label htmlFor="plus_one_of" className="block text-sm font-medium text-gray-900 mb-1">
-                Whose +1 are they? <span className="text-red-600" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="plus_one_of"
-                type="text"
-                value={form.plus_one_of}
-                onChange={(e) => set('plus_one_of', e.target.value)}
-                className={inputClass(errors.plus_one_of)}
-              />
-              <FieldError message={errors.plus_one_of} />
+      <main className="flex-1 flex flex-col">
+        {/* ── Registered: offer to add another or finish ── */}
+        {phase === 'confirm' && (
+          <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+            <div className="text-center max-w-sm w-full">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                You&apos;re registered
+              </h2>
+              <p className="text-gray-500 text-sm mb-8">Thank you for completing the form.</p>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="w-full min-h-[52px] bg-gray-900 text-white rounded-lg text-base font-medium hover:bg-gray-800 active:bg-gray-950 transition-colors"
+                >
+                  Submit another person
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhase('done')}
+                  className="w-full min-h-[52px] border border-gray-300 text-gray-700 rounded-lg text-base font-medium hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
             </div>
-          )}
-
-          {/* 4. Dietary requirement */}
-          <div>
-            <label htmlFor="dietary_requirement" className="block text-sm font-medium text-gray-900 mb-1">
-              Dietary requirement
-            </label>
-            <select
-              id="dietary_requirement"
-              value={form.dietary_requirement}
-              onChange={(e) => set('dietary_requirement', e.target.value as DietaryOption)}
-              className="w-full min-h-[48px] px-3 py-2 border border-gray-300 rounded-lg text-gray-900 text-base bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
-            >
-              {DIETARY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
           </div>
+        )}
 
-          {/* 5. Dietary other (conditional) */}
-          {form.dietary_requirement === 'Other' && (
-            <div>
-              <label htmlFor="dietary_other" className="block text-sm font-medium text-gray-900 mb-1">
-                Please specify <span className="text-red-600" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="dietary_other"
-                type="text"
-                value={form.dietary_other}
-                onChange={(e) => set('dietary_other', e.target.value)}
-                className={inputClass(errors.dietary_other)}
-              />
-              <FieldError message={errors.dietary_other} />
+        {/* ── All done ── */}
+        {phase === 'done' && (
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="text-center max-w-sm">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">All done</h2>
+              <p className="text-gray-500 text-sm">
+                Everyone has been registered. See you on the night.
+              </p>
             </div>
-          )}
-
-          {/* 6. Has allergies? */}
-          <div>
-            <span className="block text-sm font-medium text-gray-900">Do you have any allergies?</span>
-            <YesNo value={form.has_allergy} onChange={(v) => set('has_allergy', v)} />
           </div>
+        )}
 
-          {/* 7. Allergy detail (conditional) */}
-          {form.has_allergy && (
-            <div>
-              <label htmlFor="allergy_detail" className="block text-sm font-medium text-gray-900 mb-1">
-                Please describe the allergy <span className="text-red-600" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="allergy_detail"
-                type="text"
-                value={form.allergy_detail}
-                onChange={(e) => set('allergy_detail', e.target.value)}
-                className={inputClass(errors.allergy_detail)}
-              />
-              <FieldError message={errors.allergy_detail} />
+        {/* ── Form ── */}
+        {phase === 'form' && (
+          <div className="max-w-lg mx-auto w-full px-4 py-8 space-y-8">
+            {/* Bulk upload section */}
+            <BulkUploadSection eventSlug={eventSlug} />
+
+            {/* Divider */}
+            <div className="relative" aria-hidden="true">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white px-3 text-xs text-gray-400">or add individually</span>
+              </div>
             </div>
-          )}
 
-          {/* 8. Allergy severity (conditional) */}
-          {form.has_allergy && (
-            <div>
-              <label htmlFor="allergy_severity" className="block text-sm font-medium text-gray-900 mb-1">
-                Allergy severity <span className="text-red-600" aria-hidden="true">*</span>
-              </label>
-              <select
-                id="allergy_severity"
-                value={form.allergy_severity}
-                onChange={(e) => set('allergy_severity', e.target.value as SeverityOption)}
-                className={`w-full min-h-[48px] px-3 py-2 border rounded-lg text-gray-900 text-base bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 ${
-                  errors.allergy_severity ? 'border-red-500' : 'border-gray-300'
-                }`}
+            {/* Individual form */}
+            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+
+              {/* 1. Full name */}
+              <div>
+                <label
+                  htmlFor="full_name"
+                  className="block text-sm font-medium text-gray-900 mb-1"
+                >
+                  Full name <span className="text-red-600" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="full_name"
+                  type="text"
+                  autoComplete="name"
+                  value={form.full_name}
+                  onChange={(e) => set('full_name', e.target.value)}
+                  className={inputClass(errors.full_name)}
+                />
+                <FieldError message={errors.full_name} />
+              </div>
+
+              {/* 2. Is +1? */}
+              <div>
+                <span className="block text-sm font-medium text-gray-900">
+                  Is this person a +1?
+                </span>
+                <YesNo value={form.is_plus_one} onChange={(v) => set('is_plus_one', v)} />
+              </div>
+
+              {/* 3. Whose +1 (conditional) */}
+              {form.is_plus_one && (
+                <div>
+                  <label
+                    htmlFor="plus_one_of"
+                    className="block text-sm font-medium text-gray-900 mb-1"
+                  >
+                    Whose +1 are they?{' '}
+                    <span className="text-red-600" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="plus_one_of"
+                    type="text"
+                    value={form.plus_one_of}
+                    onChange={(e) => set('plus_one_of', e.target.value)}
+                    className={inputClass(errors.plus_one_of)}
+                  />
+                  <FieldError message={errors.plus_one_of} />
+                </div>
+              )}
+
+              {/* 4. Dietary requirement */}
+              <div>
+                <label
+                  htmlFor="dietary_requirement"
+                  className="block text-sm font-medium text-gray-900 mb-1"
+                >
+                  Dietary requirement
+                </label>
+                <select
+                  id="dietary_requirement"
+                  value={form.dietary_requirement}
+                  onChange={(e) =>
+                    set('dietary_requirement', e.target.value as DietaryOption)
+                  }
+                  className="w-full min-h-[48px] px-3 py-2 border border-gray-300 rounded-lg text-gray-900 text-base bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                >
+                  {DIETARY_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 5. Dietary other (conditional) */}
+              {form.dietary_requirement === 'Other' && (
+                <div>
+                  <label
+                    htmlFor="dietary_other"
+                    className="block text-sm font-medium text-gray-900 mb-1"
+                  >
+                    Please specify{' '}
+                    <span className="text-red-600" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="dietary_other"
+                    type="text"
+                    value={form.dietary_other}
+                    onChange={(e) => set('dietary_other', e.target.value)}
+                    className={inputClass(errors.dietary_other)}
+                  />
+                  <FieldError message={errors.dietary_other} />
+                </div>
+              )}
+
+              {/* 6. Has allergies? */}
+              <div>
+                <span className="block text-sm font-medium text-gray-900">
+                  Do you have any allergies?
+                </span>
+                <YesNo value={form.has_allergy} onChange={(v) => set('has_allergy', v)} />
+              </div>
+
+              {/* 7. Allergy detail (conditional) */}
+              {form.has_allergy && (
+                <div>
+                  <label
+                    htmlFor="allergy_detail"
+                    className="block text-sm font-medium text-gray-900 mb-1"
+                  >
+                    Please describe the allergy{' '}
+                    <span className="text-red-600" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="allergy_detail"
+                    type="text"
+                    value={form.allergy_detail}
+                    onChange={(e) => set('allergy_detail', e.target.value)}
+                    className={inputClass(errors.allergy_detail)}
+                  />
+                  <FieldError message={errors.allergy_detail} />
+                </div>
+              )}
+
+              {/* 8. Allergy severity (conditional) */}
+              {form.has_allergy && (
+                <div>
+                  <label
+                    htmlFor="allergy_severity"
+                    className="block text-sm font-medium text-gray-900 mb-1"
+                  >
+                    Allergy severity{' '}
+                    <span className="text-red-600" aria-hidden="true">*</span>
+                  </label>
+                  <select
+                    id="allergy_severity"
+                    value={form.allergy_severity}
+                    onChange={(e) =>
+                      set('allergy_severity', e.target.value as SeverityOption)
+                    }
+                    className={`w-full min-h-[48px] px-3 py-2 border rounded-lg text-gray-900 text-base bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 ${
+                      errors.allergy_severity ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select severity…</option>
+                    {SEVERITY_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  <FieldError message={errors.allergy_severity} />
+                </div>
+              )}
+
+              {/* 9. Epilepsy */}
+              <div>
+                <span className="block text-sm font-medium text-gray-900">
+                  Does this person have epilepsy?
+                </span>
+                <YesNo value={form.has_epilepsy} onChange={(v) => set('has_epilepsy', v)} />
+              </div>
+
+              {/* 10. GDPR */}
+              <div>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.gdpr_consent}
+                    onChange={(e) => set('gdpr_consent', e.target.checked)}
+                    className="mt-0.5 w-5 h-5 shrink-0 rounded border-gray-300 accent-gray-900 focus:ring-2 focus:ring-gray-900"
+                  />
+                  <span className="text-sm text-gray-700 leading-relaxed">
+                    I consent to my dietary and medical information being stored securely by
+                    Cairde for the purpose of coordinating this event. This data will not be
+                    shared beyond the event venue and will be deleted after the event.
+                  </span>
+                </label>
+                <FieldError message={errors.gdpr_consent} />
+              </div>
+
+              {/* Server error */}
+              {serverError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                  <p className="text-sm text-red-700">{serverError}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full min-h-[52px] bg-gray-900 text-white rounded-lg text-base font-medium hover:bg-gray-800 active:bg-gray-950 transition-colors disabled:opacity-60"
               >
-                <option value="">Select severity…</option>
-                {SEVERITY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-              <FieldError message={errors.allergy_severity} />
-            </div>
-          )}
-
-          {/* 9. Epilepsy */}
-          <div>
-            <span className="block text-sm font-medium text-gray-900">
-              Does this person have epilepsy?
-            </span>
-            <YesNo value={form.has_epilepsy} onChange={(v) => set('has_epilepsy', v)} />
+                {submitting ? 'Submitting…' : 'Submit'}
+              </button>
+            </form>
           </div>
-
-          {/* 10. GDPR */}
-          <div>
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.gdpr_consent}
-                onChange={(e) => set('gdpr_consent', e.target.checked)}
-                className="mt-0.5 w-5 h-5 shrink-0 rounded border-gray-300 accent-gray-900 focus:ring-2 focus:ring-gray-900"
-              />
-              <span className="text-sm text-gray-700 leading-relaxed">
-                I consent to my dietary and medical information being stored securely by Cairde for the
-                purpose of coordinating this event. This data will not be shared beyond the event venue
-                and will be deleted after the event.
-              </span>
-            </label>
-            <FieldError message={errors.gdpr_consent} />
-          </div>
-
-          {/* Server error */}
-          {serverError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-              <p className="text-sm text-red-700">{serverError}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full min-h-[52px] bg-gray-900 text-white rounded-lg text-base font-medium hover:bg-gray-800 active:bg-gray-950 transition-colors disabled:opacity-60"
-          >
-            {submitting ? 'Submitting…' : 'Submit'}
-          </button>
-        </form>
+        )}
       </main>
+
       <footer className="py-6 text-center">
         <p className="text-xs text-gray-400">Powered by Cairde Events</p>
       </footer>
